@@ -3,13 +3,15 @@ from django.shortcuts import render
 
 def index(request):
     context = {
-        'title': 'Home',
-        'content': 'Content',
-        'list': ['first', 'second', 'third'],
-        'dict': {'first': 1},
-        'bool': False,
+        'title': 'Home - Главная',
+        'content': 'Магазин мебели HOME',
     }
     return render(request, 'main/index.html', context)
 
 def about(request):
-    return HttpResponse("Hello, world. You're at the polls about.")
+    context = {
+        'title': 'Home - О нас',
+        'content': 'О нас',
+        'text_on_page': 'Описание про этот магазин',
+    }
+    return render(request, 'main/about.html', context)
