@@ -5,3 +5,4 @@ media/
 
 .pylintrc
 __pycache__
+cache/
