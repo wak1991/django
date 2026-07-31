@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.contrib import auth, messages
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView, TemplateView
 from django.db.models import Prefetch
 
 from carts.models import Cart
@@ -68,39 +68,40 @@ class UserRegistrationView(CreateView):
         context['title'] = 'Home - Регистрация'
         return context
 
-# class UserProfileView(LoginRequiredMixin, UpdateView):
+class UserProfileView(LoginRequiredMixin, UpdateView):
+    template_name = 'users/profile.html'
+    form_class = ProfileForm
+    success_url = reverse_lazy('users:profile')
 
-@login_required
-def profile(request):
-    if request.method == "POST":
-        form = ProfileForm(data= request.POST, instance=request.user, files=request.FILES)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Обновлено')
-            return HttpResponseRedirect(reverse('user:profile'))
-    else:
-        form = ProfileForm(instance=request.user)
+    def get_object(self, queryset=None):
+        return self.request.user
 
-    orders = (
-        Order.objects.filter(user=request.user)
-            .prefetch_related(
-                Prefetch(
+    def form_valid(self, form):
+        messages.success(self.request, 'Профайл обновлён')
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Произошла ошибка')
+        return super().form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Home - Кабинет'
+        context['orders'] = Order.objects.filter(user=self.request.user).prefetch_related(
+            Prefetch(
                 'orderitem_set',
-                    queryset=OrderItem.objects.select_related('product'),
+                queryset=OrderItem.objects.select_related('product'),
             )
-        )
-        .order_by('-id')
-    )
+        ).order_by('-id')
+        return context
 
-    context = {
-        'title': 'Home - Кабинет',
-        'form': form,
-        'orders': orders
-    }
-    return render(request, 'users/profile.html', context)
+class UserCartView(TemplateView):
+    template_name = 'users/users_cart.html'
 
-def users_cart(request):
-    return render(request, 'users/users_cart.html')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Home - Корзина'
+        return context
 
 @login_required
 def logout(request):
